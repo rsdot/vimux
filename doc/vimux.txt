@@ -17,6 +17,8 @@ CONTENTS                                                        *vimux-contents*
       2.7 .............................. |VimuxClearRunnerHistory|
       2.8 .............................. |VimuxZoomRunner|
       2.9 .............................. |VimuxRunCommandInDir|
+      2.10 ............................. |VimuxSwitchOnRunnerSessionPane|
+      2.11 ............................. |VimuxSwitchOffRunnerSessionPane|
     3. Misc ............................ |VimuxMisc|
       3.1 Example Keybinding............ |VimuxExampleKeybinding|
       3.2 Tslime Replacement............ |VimuxTslimeReplacement|
@@ -221,6 +223,47 @@ inFile: If 1 the filename will be appended to the command
  " Push the repository of the currently opened file
  nnoremap <leader>gp :call VimuxRunCommandInDir("git push", 0)<CR>
 <
+
+------------------------------------------------------------------------------
+                                                        *VimuxSwitchOnRunnerSessionPane*
+VimuxSwitchOnRunnerSessionPane~
+
+Use separate tmux session in different monitor for runner pane, for example:
+
+>
+ # use separate tmux session runner pane #1
+ :VimuxSwitchOnRunnerSessionPane 1
+
+ # use separate tmux session runner pane #2
+ :VimuxSwitchOnRunnerSessionPane 2
+ ...
+<
+Hints: tmux <prefix> + q would display the pane #
+
+which would set value for
+>
+ :let g:VimuxRunnerSessionPane = "runner.1"
+ :let g:VimuxRunnerSessionPane = "runner.2"
+ ...
+<
+if g:|VimuxRunnerSessionName| is using the default value
+
+
+------------------------------------------------------------------------------
+                                                        *VimuxSwitchOffRunnerSessionPane*
+VimuxSwitchOffRunnerSessionPane~
+
+Use same tmux session as vim/neovim editor in the same monitor for runner pane
+
+>
+ :VimuxSwitchOffRunnerSessionPane
+<
+which will under the hood set value for
+>
+ :let g:VimuxRunnerSessionPane = ""
+<
+and call |:VimuxOpenRunner|
+
 
 ==============================================================================
 MISC (3)                                                             *VimuxMisc*
@@ -468,6 +511,30 @@ runner is created instead, positioned according to `VimuxOrientation`.
             \}
 <
 Default: {}
+
+------------------------------------------------------------------------------
+                                                            *VimuxRunnerSessionName*
+4.14 g:VimuxRunnerSessionName~
+
+Set this property to customize the new tmux session name
+
+$ tmux new-session -s <new runner pane session name here> -t <vim/neovim editor session name here>
+
+Default: 'runner'
+
+------------------------------------------------------------------------------
+                                                            *VimuxRunnerSessionPane*
+4.14 g:VimuxRunnerSessionPane~
+
+Default: ''
+
+|VimuxSwitchOnRunnerSessionPane| which would set value for
+>
+ :let g:VimuxRunnerSessionPane = "runner.1"
+ :let g:VimuxRunnerSessionPane = "runner.2"
+ ...
+<
+if g:|VimuxRunnerSessionName| is using the default value
 
 ==============================================================================
 vim:tw=78:ts=2:sw=2:expandtab:ft=help:norl:

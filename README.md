@@ -9,6 +9,35 @@ Vimux was originally inspired by [tslime.vim](https://github.com/jgdavey/tslime.
 
 By default, when you call `VimuxRunCommand` vimux will create a 20% tall horizontal pane under your current tmux pane and execute a command in it without losing the focus on vim. Once that pane exists, whenever you call `VimuxRunCommand` again the command will be executed in that pane. A frequent use case  is wanting to rerun commands over and over. An example of this is running the current file through rspec. Rather than typing that over and over `VimuxRunLastCommand` will execute the last command called with `VimuxRunCommand`.
 
+## _Forked new feature_: Multi monitors suport
+
+_**forked version from original [preservim/vimux](https://github.com/preservim/vimux), added feature to be able to support multi monitors
+with the setup of vim/neovim in one monitor and runner pane in another**_
+
+### example
+
+```bash
+$ tmux new -s main # for the vim/neovim editor in one monitor
+
+$ tmux new-session -s runner -t main # for the runner pane in different monitor
+
+# create new windows for the runner pane and focus it
+$ tmux new-window -n win1
+$ tmux select-window -t win1
+```
+
+```vim
+" use separate tmux session runner pane #1
+:VimuxSwitchOnRunnerSessionPane 1
+
+" use separate tmux session runner pane #2
+:VimuxSwitchOnRunnerSessionPane 2
+...
+
+" use same tmux session as vim/neovim editor for runner pane
+:VimuxSwitchOffRunnerSessionPane
+```
+
 ## Installation
 
 With **[vim-bundle](https://github.com/preservim/vim-bundle)**: `vim-bundle install preservim/vimux`

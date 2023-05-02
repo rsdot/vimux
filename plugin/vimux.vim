@@ -18,6 +18,8 @@ let g:VimuxUseNearest    = get(g:, 'VimuxUseNearest',    v:true)
 let g:VimuxExpandCommand = get(g:, 'VimuxExpandCommand', v:false)
 let g:VimuxCloseOnExit   = get(g:, 'VimuxCloseOnExit',   v:false)
 let g:VimuxCommandShell  = get(g:, 'VimuxCommandShell',   v:true)
+let g:VimuxRunnerSessionName = get(g:, 'VimuxRunnerSessionName',    'runner')
+let g:VimuxRunnerSessionPane = get(g:, 'VimuxRunnerSessionPane',    '')
 
 function! VimuxOption(name) abort
   return get(b:, a:name, get(g:, a:name))
@@ -41,6 +43,8 @@ command -nargs=? VimuxPromptCommand :call VimuxPromptCommand(<args>)
 command -bar VimuxClearTerminalScreen :call VimuxClearTerminalScreen()
 command -bar VimuxClearRunnerHistory :call VimuxClearRunnerHistory()
 command -bar VimuxTogglePane :call VimuxTogglePane()
+command -bar VimuxSwitchOffRunnerSessionPane :call VimuxSwitchOffRunnerSessionPane()
+command -nargs=1 VimuxSwitchOnRunnerSessionPane :call VimuxSwitchOnRunnerSessionPane(<args>)
 
 augroup VimuxAutocmds
   au!
@@ -192,14 +196,31 @@ function! VimuxPromptCommand(...) abort
 endfunction
 
 function! VimuxTmux(arguments) abort
-  if VimuxOption('VimuxDebug')
-    echom VimuxOption('VimuxTmuxCommand').' '.a:arguments
-  endif
-  if has_key(environ(), 'TMUX')
-    return system(VimuxOption('VimuxTmuxCommand').' '.a:arguments)
-  else
+  if !has_key(environ(), 'TMUX')
     throw 'Aborting, because not inside tmux session.'
   endif
+
+  let cmd = a:arguments
+
+  if VimuxOption('VimuxDebug')
+    echom VimuxOption('VimuxTmuxCommand').' '.cmd
+  endif
+
+  if VimuxOption('VimuxRunnerSessionPane') != '' && match(cmd,'split\-window') > -1
+    if VimuxOption('VimuxDebug')
+      echom '  |-(skip)'
+    endif
+    return
+  endif
+
+  if VimuxOption('VimuxRunnerSessionPane') != '' && match(cmd,'send\-keys') > -1
+    let cmd = substitute(cmd,'\-t\s\+\(\S\+\)','-t '.VimuxOption('VimuxRunnerSessionPane'),'')
+    if VimuxOption('VimuxDebug')
+      echom '  |-('.VimuxOption('VimuxTmuxCommand').' '.cmd.')'
+    endif
+  endif
+
+  return system(VimuxOption('VimuxTmuxCommand').' '.cmd)
 endfunction
 
 function! s:tmuxSession() abort
@@ -318,3 +339,29 @@ function! s:autoclose() abort
     call VimuxCloseRunner()
   endif
 endfunction
+
+function! VimuxSwitchOffRunnerSessionPane() abort
+  let g:VimuxRunnerSessionPane = ''
+  call VimuxOpenRunner()
+endfunction
+
+function! VimuxSwitchOnRunnerSessionPane(paneno) abort
+  let runnersession = VimuxOption('VimuxRunnerSessionName')
+  let sessions = split(VimuxTmux("ls -F '#{session_name}'"), "\n")
+  if len(sessions) == 1
+    let activesession = split(VimuxTmux("display-message -p '#S'"),"\n")[0]
+    let cmd = VimuxOption('VimuxTmuxCommand')." new-session -s ".runnersession." -t ".activesession . "; ".VimuxOption('VimuxTmuxCommand')." new-window -n win1; ".VimuxOption('VimuxTmuxCommand')." select-window -t win1"
+    echo "run following in shell <paste from clipboard>: ". cmd
+    let @+=cmd
+    let g:VimuxRunnerSessionPane = runnersession.'.1'
+    return
+  endif
+
+  for session in sessions
+    if session == runnersession
+      let g:VimuxRunnerSessionPane = runnersession.'.'.a:paneno
+      return
+    endif
+  endfor
+endfunction
+
